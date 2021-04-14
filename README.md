@@ -59,7 +59,7 @@ my_policy = jmp.Policy(compute_dtype=half,
 
 The policy object can be used to cast pytrees:
 
-```python{highlight="lines:2,5,8"}
+```python
 def layer(params, x):
   params, x = my_policy.cast_to_compute((params, x))
   w, b = params
@@ -96,7 +96,7 @@ particularly important when training with `float16` and less important for
 The easiest way to shift gradients is with loss scaling, which scales your loss
 and gradients by `S` and `1/S` respectively.
 
-```python{highlight="content:\bloss_scale\b"}
+```python
 def my_loss_fn(params, loss_scale: jmp.LossScale, ...):
   loss = ...
   # You should apply regularization etc before scaling.
@@ -127,7 +127,7 @@ during training to find the largest value for `S` that produces finite
 gradients. This is more convenient and robust compared with picking a static
 loss scale, but has a small performance impact (between 1 and 5%).
 
-```python{highlight="content:\bloss_scale\b"}
+```python
 def my_loss_fn(params, loss_scale: jmp.LossScale, ...):
   loss = ...
   # You should apply regularization etc before scaling.
