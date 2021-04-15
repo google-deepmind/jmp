@@ -26,7 +26,7 @@ from jmp._src.policy import get_policy
 from jmp._src.policy import half_dtype
 from jmp._src.policy import Policy
 
-__version__ = "0.0.2"
+__version__ = "0.0.3.dev"
 
 __all__ = (
     "all_finite",
