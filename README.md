@@ -1,5 +1,8 @@
 # Mixed precision training in [JAX]
 
+![Test status](https://github.com/deepmind/jmp/workflows/pytest/badge.svg)
+![PyPI version](https://img.shields.io/pypi/v/jmp)
+
 [**Installation**](#installation)
 | [**Policies**](#policies)
 | [**Loss scaling**](#loss-scaling)
