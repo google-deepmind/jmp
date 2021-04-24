@@ -4,6 +4,7 @@
 ![PyPI version](https://img.shields.io/pypi/v/jmp)
 
 [**Installation**](#installation)
+| [**Examples**](#examples)
 | [**Policies**](#policies)
 | [**Loss scaling**](#loss-scaling)
 | [**Citing JMP**](#citing-jmp)
@@ -46,6 +47,13 @@ Then, install JMP using pip:
 ```bash
 $ pip install git+https://github.com/deepmind/jmp
 ```
+
+## Examples
+
+You can find a
+[fully worked JMP example in Haiku](https://github.com/deepmind/dm-haiku/tree/master/examples/imagenet)
+which shows how to use mixed f32/f16 precision to halve training time on GPU and
+mixed f32/bf16 to reduce training time on TPU by a third.
 
 ## Policies
 
