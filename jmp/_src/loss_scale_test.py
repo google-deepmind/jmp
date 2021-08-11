@@ -84,8 +84,9 @@ class LossScaleTest(parameterized.TestCase):
   @parameterized.parameters((20, 2), (30, 3))
   def test_dynamic_loss_scale_adjust_reduce_on_non_finite(self, period, factor):
     grads_finite = jnp.bool_(False)
-    init = jnp.float32(10)
-    loss_scale = jmp.DynamicLossScale(init, jnp.int32(0), period, factor)
+    init = np.float32(10)
+    loss_scale = jmp.DynamicLossScale(jnp.asarray(init), jnp.int32(0), period,
+                                      factor)
     self.assertLess(init / (factor ** 100), 1, msg="should cover max(1, S)")
     for i in range(100):
       loss_scale = loss_scale.adjust(grads_finite)
