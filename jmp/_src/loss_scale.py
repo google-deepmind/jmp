@@ -23,6 +23,8 @@ from jax import tree_util
 import jax.numpy as jnp
 import numpy as np
 
+# from deepmind.internal import usage_logging
+
 T = TypeVar("T")
 
 
@@ -39,6 +41,7 @@ class NoOpLossScale:
     return 1
 
   def scale(self, tree: T) -> T:
+    # usage_logging.log_event(usage_logging.Event.JMP, "NoOpLossScale")
     return tree
 
   def unscale(self, tree: T) -> T:
@@ -56,6 +59,7 @@ class StaticLossScale:
   loss_scale: jnp.ndarray
 
   def scale(self, tree: T) -> T:
+    # usage_logging.log_event(usage_logging.Event.JMP, "StaticLossScale")
     return jax.tree_map(lambda x: x * self.loss_scale, tree)
 
   def unscale(self, tree: T) -> T:
@@ -116,6 +120,7 @@ class DynamicLossScale:
   factor: int = 2
 
   def scale(self, tree: T) -> T:
+    # usage_logging.log_event(usage_logging.Event.JMP, "DynamicLossScale")
     return jax.tree_map(lambda x: x * self.loss_scale, tree)
 
   def unscale(self, tree: T) -> T:
