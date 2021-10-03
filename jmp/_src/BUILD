@@ -9,7 +9,6 @@ jmp_py_library(
     srcs = ["loss_scale.py"],
     srcs_version = "PY3",
     deps = [
-        # pip: dataclasses
         # pip: jax
         # pip: numpy
     ],
@@ -33,10 +32,7 @@ jmp_py_library(
     name = "policy",
     srcs = ["policy.py"],
     srcs_version = "PY3",
-    deps = [
-        # pip: dataclasses
-        # pip: jax
-    ],
+    deps = ["//third_party/py/jax"],
 )
 
 jmp_py_test(
