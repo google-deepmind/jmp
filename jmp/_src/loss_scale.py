@@ -104,7 +104,7 @@ class DynamicLossScale:
 
   Typical usage of this class will be something like:
 
-  >>> loss_scale = jmp.DynamicLossScale(2 ** 15)
+  >>> loss_scale = jmp.DynamicLossScale(jnp.asarray(2 ** 15))
   >>> for _ in range(num_steps):
   ...   # compute loss
   ...   loss = loss_scale.scale(loss)
@@ -118,6 +118,7 @@ class DynamicLossScale:
   counter: jnp.ndarray = np.zeros([], np.int32)
   period: int = 2000
   factor: int = 2
+  min_loss_scale: jnp.ndarray = np.ones([], np.int32)
 
   def scale(self, tree: T) -> T:
     # usage_logging.log_event(usage_logging.Event.JMP, "DynamicLossScale")
@@ -143,8 +144,6 @@ class DynamicLossScale:
     assert grads_finite.ndim == 0, "Expected boolean scalar"
 
     first_finite = lambda a, b: jax.lax.select(jnp.isfinite(a).all(), a, b)
-    one = jnp.ones([], self.loss_scale.dtype)
-
     loss_scale = jax.lax.select(
         grads_finite,
 
@@ -156,14 +155,16 @@ class DynamicLossScale:
             self.loss_scale),
 
         # If grads are non finite reduce loss scale.
-        jnp.maximum(one, self.loss_scale / self.factor))
+        jnp.maximum(self.min_loss_scale, self.loss_scale / self.factor))
 
     counter = ((self.counter + 1) % self.period) * grads_finite
 
-    return DynamicLossScale(loss_scale=loss_scale,
-                            counter=counter,
-                            period=self.period,
-                            factor=self.factor)
+    return DynamicLossScale(
+        loss_scale=loss_scale,
+        counter=counter,
+        period=self.period,
+        factor=self.factor,
+        min_loss_scale=self.min_loss_scale)
 
 
 register_empty_pytree(NoOpLossScale)

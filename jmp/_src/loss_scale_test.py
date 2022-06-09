@@ -97,6 +97,25 @@ class LossScaleTest(parameterized.TestCase):
       self.assertEqual(loss_scale.period, period)
       self.assertEqual(loss_scale.factor, factor)
 
+  @parameterized.parameters((20, 2, .3125), (30, 3, .37), (5, 2, 0))
+  def test_dynamic_loss_scale_explicit_min_loss_scale(self, period, factor,
+                                                      min_loss_scale):
+    grads_finite = jnp.bool_(False)
+    init = np.float32(10)
+    loss_scale = jmp.DynamicLossScale(
+        jnp.asarray(init), jnp.int32(0), period, factor,
+        jnp.asarray(min_loss_scale))
+    self.assertLess(init / (factor**100), 1, msg="should cover max(1, S)")
+    for i in range(100):
+      loss_scale = loss_scale.adjust(grads_finite)
+      np.testing.assert_allclose(
+          loss_scale.loss_scale,
+          max(min_loss_scale, init / (factor**(i + 1))),
+          rtol=1e-5)
+      self.assertEqual(loss_scale.counter, 0)
+      self.assertEqual(loss_scale.period, period)
+      self.assertEqual(loss_scale.factor, factor)
+
   def test_dynamic_loss_scale_adjust_requires_scalar_input(self):
     pass
 
