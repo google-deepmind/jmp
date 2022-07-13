@@ -14,9 +14,9 @@
 # ==============================================================================
 """Utilities for mixed precision in JAX."""
 
+import dataclasses
 from typing import TypeVar
 
-import dataclasses
 import jax
 import jax.numpy as jnp
 
@@ -28,7 +28,7 @@ def _cast_floating_to(tree: T, dtype: jnp.dtype) -> T:
     if isinstance(x, jnp.ndarray) and jnp.issubdtype(x.dtype, jnp.floating):
       x = x.astype(dtype)
     return x
-  return jax.tree_map(conditional_cast, tree)
+  return jax.tree_util.tree_map(conditional_cast, tree)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -127,4 +127,3 @@ def parse_dtype(value: str) -> jnp.dtype:
         f"Unknown dtype '{value}' must be full,half,float16,bfloat16 or a "
         "contraction thereof (e.g. 'f' for 'full', 'bf16' for 'bfloat16')"
     ) from e
-

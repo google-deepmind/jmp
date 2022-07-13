@@ -14,10 +14,10 @@
 # ==============================================================================
 """Utilities for loss scaling."""
 
+import dataclasses
 import functools
 from typing import Tuple, TypeVar, Union
 
-import dataclasses
 import jax
 from jax import tree_util
 import jax.numpy as jnp
@@ -60,11 +60,11 @@ class StaticLossScale:
 
   def scale(self, tree: T) -> T:
     # usage_logging.log_event(usage_logging.Event.JMP, "StaticLossScale")
-    return jax.tree_map(lambda x: x * self.loss_scale, tree)
+    return jax.tree_util.tree_map(lambda x: x * self.loss_scale, tree)
 
   def unscale(self, tree: T) -> T:
     inv_loss_scale = 1 / self.loss_scale
-    return jax.tree_map(lambda x: x * inv_loss_scale, tree)
+    return jax.tree_util.tree_map(lambda x: x * inv_loss_scale, tree)
 
   def adjust(self, grads_finite: jnp.ndarray):
     del grads_finite
@@ -122,11 +122,11 @@ class DynamicLossScale:
 
   def scale(self, tree: T) -> T:
     # usage_logging.log_event(usage_logging.Event.JMP, "DynamicLossScale")
-    return jax.tree_map(lambda x: x * self.loss_scale, tree)
+    return jax.tree_util.tree_map(lambda x: x * self.loss_scale, tree)
 
   def unscale(self, tree: T) -> T:
     inv_loss_scale = 1 / self.loss_scale
-    return jax.tree_map(lambda x: x * inv_loss_scale, tree)
+    return jax.tree_util.tree_map(lambda x: x * inv_loss_scale, tree)
 
   def tree_flatten(self) -> Tuple[_Data, _Meta]:
     data = (self.loss_scale, self.counter)

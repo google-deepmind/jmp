@@ -60,7 +60,8 @@ class LossScaleTest(parameterized.TestCase):
     factor = 2
     loss_scale = jmp.DynamicLossScale(scale, counter, period, factor)
     self.assertEqual(jax.tree_leaves(loss_scale), [scale, counter])
-    self.assertEqual(jax.tree_map(lambda x: x, loss_scale), loss_scale)
+    self.assertEqual(jax.tree_util.tree_map(lambda x: x, loss_scale),
+                     loss_scale)
 
   @parameterized.parameters((20, 2), (30, 3))
   def test_dynamic_loss_scale_adjust_increases_on_finite(self, period, factor):
