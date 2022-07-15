@@ -188,4 +188,4 @@ def all_finite(tree) -> jnp.ndarray:
 def select_tree(pred: jnp.ndarray, a: T, b: T) -> T:
   """Selects a pytree based on the given predicate."""
   assert pred.ndim == 0 and pred.dtype == jnp.bool_, "expected boolean scalar"
-  return jax.tree_multimap(functools.partial(jax.lax.select, pred), a, b)
+  return jax.tree_map(functools.partial(jax.lax.select, pred), a, b)
