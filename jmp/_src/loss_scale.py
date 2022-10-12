@@ -118,7 +118,16 @@ class DynamicLossScale:
   counter: jnp.ndarray = np.zeros([], np.int32)
   period: int = 2000
   factor: int = 2
-  min_loss_scale: jnp.ndarray = np.ones([], np.int32)
+  min_loss_scale: jnp.ndarray = np.ones([], np.float32)
+
+  def __post_init__(self) -> None:
+      err_msg = "Expected floating type for %s, got %s"
+      loss_scale_dtype = jnp.asarray(self.loss_scale).dtype
+      if not jnp.issubdtype(loss_scale_dtype, jnp.floating):
+          raise TypeError(err_msg % ("loss_scale", loss_scale_dtype))
+      min_loss_scale_dtype = jnp.asarray(self.min_loss_scale).dtype
+      if not jnp.issubdtype(min_loss_scale_dtype, jnp.floating):
+          raise TypeError(err_msg % ("min_loss_scale", min_loss_scale_dtype))
 
   def scale(self, tree: T) -> T:
     # usage_logging.log_event(usage_logging.Event.JMP, "DynamicLossScale")

@@ -34,9 +34,9 @@ class LossScaleTest(parameterized.TestCase):
       ("StaticLossScale(2)", jmp.StaticLossScale, 2),
       ("StaticLossScale(3)", jmp.StaticLossScale, 3),
       ("StaticLossScale(4)", jmp.StaticLossScale, 4),
-      ("DynamicLossScale(2)", jmp.DynamicLossScale, 2),
-      ("DynamicLossScale(3)", jmp.DynamicLossScale, 3),
-      ("DynamicLossScale(4)", jmp.DynamicLossScale, 4),
+      ("DynamicLossScale(2)", jmp.DynamicLossScale, 2.),
+      ("DynamicLossScale(3)", jmp.DynamicLossScale, 3.),
+      ("DynamicLossScale(4)", jmp.DynamicLossScale, 4.),
   )
   def test_static_loss_scale(self, cls, scale):
     loss_scale = cls(scale)
@@ -98,7 +98,7 @@ class LossScaleTest(parameterized.TestCase):
       self.assertEqual(loss_scale.period, period)
       self.assertEqual(loss_scale.factor, factor)
 
-  @parameterized.parameters((20, 2, .3125), (30, 3, .37), (5, 2, 0))
+  @parameterized.parameters((20, 2, .3125), (30, 3, .37), (5., 2., 0.))
   def test_dynamic_loss_scale_explicit_min_loss_scale(self, period, factor,
                                                       min_loss_scale):
     grads_finite = jnp.bool_(False)
