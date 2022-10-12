@@ -120,6 +120,15 @@ class LossScaleTest(parameterized.TestCase):
   def test_dynamic_loss_scale_adjust_requires_scalar_input(self):
     pass
 
+  def test_dynamic_loss_scale_raises_type_error_on_int_loss_scale(self):
+    with self.assertRaises(TypeError):
+      jmp.DynamicLossScale(jnp.asarray(1, dtype=jnp.int32))
+
+  def test_dynamic_loss_scale_raises_type_error_on_int_min_loss_scale(self):
+    with self.assertRaises(TypeError):
+      jmp.DynamicLossScale(jnp.asarray(1, dtype=jnp.float32),
+                           min_loss_scale=jnp.asarray(1, dtype=jnp.int32))
+
   @parameterized.parameters(jnp.inf, jnp.nan)
   def test_all_finite(self, non_finite):
     self.assertTrue(jmp.all_finite(None))
