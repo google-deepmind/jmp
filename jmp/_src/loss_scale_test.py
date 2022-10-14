@@ -121,11 +121,13 @@ class LossScaleTest(parameterized.TestCase):
     pass
 
   def test_dynamic_loss_scale_raises_type_error_on_int_loss_scale(self):
-    with self.assertRaises(TypeError):
+    expected_message = "Expected floating type for loss_scale"
+    with self.assertWarnsRegex(Warning, expected_message):
       jmp.DynamicLossScale(jnp.asarray(1, dtype=jnp.int32))
 
   def test_dynamic_loss_scale_raises_type_error_on_int_min_loss_scale(self):
-    with self.assertRaises(TypeError):
+    expected_message = "Expected floating type for min_loss_scale"
+    with self.assertWarnsRegex(Warning, expected_message):
       jmp.DynamicLossScale(jnp.asarray(1, dtype=jnp.float32),
                            min_loss_scale=jnp.asarray(1, dtype=jnp.int32))
 
