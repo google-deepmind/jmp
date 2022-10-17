@@ -39,12 +39,15 @@ class Policy:
   output_dtype: jnp.dtype
 
   def cast_to_param(self, x):
+    """Converts floating point values to the param dtype."""
     return _cast_floating_to(x, self.param_dtype)
 
   def cast_to_compute(self, x):
+    """Converts floating point values to the compute dtype."""
     return _cast_floating_to(x, self.compute_dtype)
 
   def cast_to_output(self, x):
+    """Converts floating point values to the output dtype."""
     return _cast_floating_to(x, self.output_dtype)
 
   def with_output_dtype(self, output_dtype: jnp.dtype) -> "Policy":
