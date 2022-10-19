@@ -32,7 +32,10 @@ jmp_py_library(
     name = "policy",
     srcs = ["policy.py"],
     srcs_version = "PY3",
-    deps = ["//third_party/py/jax"],
+    deps = [
+        # pip: jax
+        # pip: numpy
+    ],
 )
 
 jmp_py_test(

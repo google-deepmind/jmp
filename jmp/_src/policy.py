@@ -19,13 +19,15 @@ from typing import TypeVar
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 T = TypeVar("T")
 
 
 def _cast_floating_to(tree: T, dtype: jnp.dtype) -> T:
   def conditional_cast(x):
-    if isinstance(x, jnp.ndarray) and jnp.issubdtype(x.dtype, jnp.floating):
+    if (isinstance(x, (np.ndarray, jnp.ndarray)) and
+        jnp.issubdtype(x.dtype, jnp.floating)):
       x = x.astype(dtype)
     return x
   return jax.tree_util.tree_map(conditional_cast, tree)

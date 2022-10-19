@@ -27,7 +27,7 @@ import numpy as np
 HALF_DTYPES = (np.float16, jnp.float16, jnp.bfloat16)
 FULL_DTYPES = (np.float32, jnp.float32)
 DTYPES = HALF_DTYPES + FULL_DTYPES
-NUMPYS = np, jnp
+NUMPYS = (np, jnp)
 
 
 def get_dtype_name(dtype):
@@ -53,14 +53,18 @@ def skip_if_unsupported(dtype):
 
 class PolicyTest(parameterized.TestCase):
 
+  def assert_dtypes_equal(self, tree_a, tree_b):
+    jax.tree_map(lambda a, b: self.assertEqual(a.dtype, b.dtype), tree_a,
+                 tree_b)
+
   @parameterized.parameters(*it.product(DTYPES, NUMPYS))
   def test_policy_cast_to_param(self, dtype, np_):
     skip_if_unsupported(dtype)
     policy = jmp.Policy(dtype, dtype, dtype)
     self.assertEqual(policy.param_dtype, dtype)
     tree = {"a": np_.ones([])}
-    self.assertEqual(policy.cast_to_param(tree),
-                     {"a": np_.ones([], dtype)})
+    self.assert_dtypes_equal(policy.cast_to_param(tree),
+                             {"a": np_.ones([], dtype)})
 
   @parameterized.parameters(*it.product(DTYPES, NUMPYS))
   def test_policy_cast_to_compute(self, dtype, np_):
@@ -68,8 +72,8 @@ class PolicyTest(parameterized.TestCase):
     policy = jmp.Policy(dtype, dtype, dtype)
     self.assertEqual(policy.compute_dtype, dtype)
     tree = {"a": np_.ones([])}
-    self.assertEqual(policy.cast_to_compute(tree),
-                     {"a": np_.ones([], dtype)})
+    self.assert_dtypes_equal(policy.cast_to_compute(tree),
+                             {"a": np_.ones([], dtype)})
 
   @parameterized.parameters(*it.product(DTYPES, NUMPYS))
   def test_policy_cast_to_output(self, dtype, np_):
@@ -77,8 +81,8 @@ class PolicyTest(parameterized.TestCase):
     policy = jmp.Policy(dtype, dtype, dtype)
     self.assertEqual(policy.output_dtype, dtype)
     tree = {"a": np_.ones([])}
-    self.assertEqual(policy.cast_to_output(tree),
-                     {"a": np_.ones([], dtype)})
+    self.assert_dtypes_equal(policy.cast_to_output(tree),
+                             {"a": np_.ones([], dtype)})
 
   @parameterized.parameters(*it.product(DTYPES, NUMPYS))
   def test_policy_with_output_dtype(self, dtype, np_):
