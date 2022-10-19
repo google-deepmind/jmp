@@ -122,22 +122,8 @@ class DynamicLossScale:
   min_loss_scale: jnp.ndarray = np.ones([], np.float32)
 
   def __post_init__(self) -> None:
-      err_msg = "Expected floating type for %s, got %s"
-      try:
-        loss_scale_dtype = jnp.asarray(self.loss_scale).dtype
-      except TypeError:
-        pass
-      else:
-        if not jnp.issubdtype(loss_scale_dtype, jnp.floating):
-          warnings.warn(Warning(err_msg % ("loss_scale", loss_scale_dtype)))
-      try:
-        min_loss_scale_dtype = jnp.asarray(self.min_loss_scale).dtype
-      except TypeError:
-        pass
-      else:
-        if not jnp.issubdtype(min_loss_scale_dtype, jnp.floating):
-          warnings.warn(Warning(err_msg % ("min_loss_scale",
-                                           min_loss_scale_dtype)))
+    check_is_floating(self.loss_scale, "loss_scale")
+    check_is_floating(self.min_loss_scale, "min_loss_scale")
 
   def scale(self, tree: T) -> T:
     # usage_logging.log_event(usage_logging.Event.JMP, "DynamicLossScale")
@@ -208,3 +194,22 @@ def select_tree(pred: jnp.ndarray, a: T, b: T) -> T:
   """Selects a pytree based on the given predicate."""
   assert pred.ndim == 0 and pred.dtype == jnp.bool_, "expected boolean scalar"
   return jax.tree_map(functools.partial(jax.lax.select, pred), a, b)
+
+
+def check_is_floating(x: Union[jnp.ndarray, object], var_name: str) -> None:
+  """Produces a warning if the given array does not have a floating type. This
+  function handles an endgecase where Jax passes in an `object()` to determine
+  the structure of user defined pytrees during compilation. They recommend
+  explicitly checking if the array in question has the type `object`.
+
+  From the Jax documentation: "The __init__ and __new__ methods of custom
+  PyTree classes should generally avoid doing any array conversion or other
+  input validation, or else anticipate and handle these special cases."
+
+  See: https://jax.readthedocs.io/en/latest/pytrees.html#custom-pytrees-and-initialization
+  """
+  if type(x) is object:
+    return
+  x_dtype = jnp.asarray(x).dtype
+  if not jnp.issubdtype(x_dtype, jnp.floating):
+    warnings.warn(f"Expected floating type for {var_name}, got {x_dtype}")
