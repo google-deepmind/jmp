@@ -148,5 +148,13 @@ class PolicyTest(parameterized.TestCase):
                      i=half_tree["i"])
     self.assertEqual(jmp.cast_to_half(full_tree), half_tree)
 
+  @parameterized.parameters(*it.product(DTYPES))
+  def test_str(self, dtype):
+    policy = jmp.Policy(dtype, dtype, dtype)
+    policy_str = str(policy)
+    for str_piece in policy_str.split(","):
+      dtype_str = str_piece.split("=")[1]
+      self.assertEqual(dtype_str, jmp.dtype_to_names[dtype][0])
+
 if __name__ == "__main__":
   absltest.main()

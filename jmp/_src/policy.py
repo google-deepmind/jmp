@@ -55,6 +55,11 @@ class Policy:
   def with_output_dtype(self, output_dtype: jnp.dtype) -> "Policy":
     return dataclasses.replace(self, output_dtype=output_dtype)
 
+  def __str__(self):
+    return "p={},c={},o={}".format(dtype_to_names[self.param_dtype][0],
+                                   dtype_to_names[self.compute_dtype][0],
+                                   dtype_to_names[self.output_dtype][0])
+
 
 def get_policy(policy_name: str) -> Policy:
   """Returns a mixed precision policy parsed from a string."""
