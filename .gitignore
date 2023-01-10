@@ -1,0 +1,7 @@
+*.egg-info
+*.ipynb
+*.pyc
+.DS_Store
+.ipynb_checkpoints/
+.mypy_cache/
+.pytype/
