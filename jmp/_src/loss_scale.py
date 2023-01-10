@@ -115,10 +115,12 @@ class DynamicLossScale:
   ...   # conditionally update params using grads
   """
   loss_scale: jnp.ndarray
-  counter: jnp.ndarray = np.zeros([], np.int32)
+  counter: jnp.ndarray = dataclasses.field(
+      default_factory=lambda: np.zeros([], np.int32))
   period: int = 2000
   factor: int = 2
-  min_loss_scale: jnp.ndarray = np.ones([], np.int32)
+  min_loss_scale: jnp.ndarray = dataclasses.field(
+      default_factory=lambda: np.ones([], np.int32))
 
   def scale(self, tree: T) -> T:
     # usage_logging.log_event(usage_logging.Event.JMP, "DynamicLossScale")
