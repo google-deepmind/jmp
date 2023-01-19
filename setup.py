@@ -54,7 +54,7 @@ setup(
     install_requires=_parse_requirements('requirements.txt'),
     extras_require=EXTRA_PACKAGES,
     tests_require=_parse_requirements('requirements-test.txt'),
-    requires_python='>=3.6',
+    requires_python='>=3.8',
     include_package_data=True,
     zip_safe=False,
     # PyPI package information.
@@ -65,7 +65,6 @@ setup(
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Topic :: Scientific/Engineering :: Mathematics',
