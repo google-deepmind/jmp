@@ -17,6 +17,7 @@
 import dataclasses
 import functools
 from typing import Tuple, TypeVar, Union
+import warnings
 
 import jax
 from jax import tree_util
@@ -122,6 +123,10 @@ class DynamicLossScale:
   min_loss_scale: jnp.ndarray = dataclasses.field(
       default_factory=lambda: np.ones([], np.int32))
 
+  def __post_init__(self) -> None:
+    warn_if_not_floating(self.loss_scale, "loss_scale")
+    warn_if_not_floating(self.min_loss_scale, "min_loss_scale")
+
   def scale(self, tree: T) -> T:
     # usage_logging.log_event(usage_logging.Event.JMP, "DynamicLossScale")
     return jax.tree_util.tree_map(lambda x: x * self.loss_scale, tree)
@@ -191,3 +196,28 @@ def select_tree(pred: jnp.ndarray, a: T, b: T) -> T:
   """Selects a pytree based on the given predicate."""
   assert pred.ndim == 0 and pred.dtype == jnp.bool_, "expected boolean scalar"
   return jax.tree_map(functools.partial(jax.lax.select, pred), a, b)
+
+
+def warn_if_not_floating(x: Union[jnp.ndarray, object], var_name: str) -> None:
+  """Produces a warning if the given array does not have a floating type.
+
+  This function handles an edgecase where Jax passes in an `object()` to
+  determine the structure of user defined pytrees during compilation. They
+  recommend explicitly checking if the array in question has the type `object`.
+
+  From the Jax documentation: "The __init__ and __new__ methods of custom
+  PyTree classes should generally avoid doing any array conversion or other
+  input validation, or else anticipate and handle these special cases."
+
+  See:
+  https://jax.readthedocs.io/en/latest/pytrees.html#custom-pytrees-and-initialization
+
+  Args:
+    x: Any object.
+    var_name: A useful name to put in error messages.
+  """
+  if type(x) is object:  # pylint: disable=unidiomatic-typecheck
+    return
+  x_dtype = jax.eval_shape(lambda: x).dtype
+  if not jnp.issubdtype(x_dtype, jnp.floating):
+    warnings.warn(f"Expected floating type for {var_name}, got {x_dtype}")
