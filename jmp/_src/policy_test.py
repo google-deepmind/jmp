@@ -54,8 +54,8 @@ def skip_if_unsupported(dtype):
 class PolicyTest(parameterized.TestCase):
 
   def assert_dtypes_equal(self, tree_a, tree_b):
-    jax.tree_map(lambda a, b: self.assertEqual(a.dtype, b.dtype), tree_a,
-                 tree_b)
+    jax.tree_util.tree_map(lambda a, b: self.assertEqual(a.dtype, b.dtype),
+                           tree_a, tree_b)
 
   @parameterized.parameters(*it.product(DTYPES, NUMPYS))
   def test_policy_cast_to_param(self, dtype, np_):

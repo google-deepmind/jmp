@@ -105,7 +105,7 @@ class DynamicLossScale:
 
   Typical usage of this class will be something like:
 
-  >>> loss_scale = jmp.DynamicLossScale(jnp.asarray(2 ** 15))
+  >>> loss_scale = jmp.DynamicLossScale(jnp.asarray(2. ** 15))
   >>> for _ in range(num_steps):
   ...   # compute loss
   ...   loss = loss_scale.scale(loss)
@@ -121,7 +121,7 @@ class DynamicLossScale:
   period: int = 2000
   factor: int = 2
   min_loss_scale: jnp.ndarray = dataclasses.field(
-      default_factory=lambda: np.ones([], np.int32))
+      default_factory=lambda: np.ones([], np.float32))
 
   def __post_init__(self) -> None:
     warn_if_not_floating(self.loss_scale, "loss_scale")
@@ -183,7 +183,7 @@ LossScale = Union[NoOpLossScale, StaticLossScale, DynamicLossScale]
 
 def all_finite(tree) -> jnp.ndarray:
   """Returns a scalar ndarray indicating whether the input arrays are finite."""
-  leaves = jax.tree_leaves(tree)
+  leaves = jax.tree_util.tree_leaves(tree)
   if not leaves:
     return jnp.array(True)
   else:
@@ -195,7 +195,7 @@ def all_finite(tree) -> jnp.ndarray:
 def select_tree(pred: jnp.ndarray, a: T, b: T) -> T:
   """Selects a pytree based on the given predicate."""
   assert pred.ndim == 0 and pred.dtype == jnp.bool_, "expected boolean scalar"
-  return jax.tree_map(functools.partial(jax.lax.select, pred), a, b)
+  return jax.tree_util.tree_map(functools.partial(jax.lax.select, pred), a, b)
 
 
 def warn_if_not_floating(x: Union[jnp.ndarray, object], var_name: str) -> None:

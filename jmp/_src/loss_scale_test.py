@@ -14,6 +14,8 @@
 # ==============================================================================
 """Tests for jmp._src.loss_scale."""
 
+import warnings
+
 from absl.testing import absltest
 from absl.testing import parameterized
 import jax
@@ -51,7 +53,12 @@ class LossScaleTest(parameterized.TestCase):
   )
   def test_static_empty_trees(self, create):
     loss_scale = create()
-    self.assertEmpty(jax.tree_leaves(loss_scale))
+    self.assertEmpty(jax.tree_util.tree_leaves(loss_scale))
+
+  def test_dynamic_loss_scale_no_warnings(self):
+    with warnings.catch_warnings(record=True) as logged_warnings:
+      jmp.DynamicLossScale(2. ** 15)
+    self.assertEmpty(logged_warnings)
 
   def test_dynamic_loss_scale_tree(self):
     scale = jnp.ones([])
@@ -59,7 +66,7 @@ class LossScaleTest(parameterized.TestCase):
     period = 2000
     factor = 2
     loss_scale = jmp.DynamicLossScale(scale, counter, period, factor)
-    self.assertEqual(jax.tree_leaves(loss_scale), [scale, counter])
+    self.assertEqual(jax.tree_util.tree_leaves(loss_scale), [scale, counter])
     self.assertEqual(jax.tree_util.tree_map(lambda x: x, loss_scale),
                      loss_scale)
 
