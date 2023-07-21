@@ -1,3 +1,5 @@
+load("//third_party/bazel_rules/rules_python/python:py_library.bzl", "py_library")
+
 # Description: JMP is a JAX Mixed Precision library.
 package(default_visibility = ["//visibility:private"])
 
