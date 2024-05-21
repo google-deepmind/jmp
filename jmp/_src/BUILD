@@ -1,6 +1,9 @@
 load("//jmp/_src:build_defs.bzl", "jmp_py_library", "jmp_py_test")
 
-package(default_visibility = ["//jmp:__subpackages__"])
+package(
+    default_applicable_licenses = ["//jmp:license"],
+    default_visibility = ["//jmp:__subpackages__"],
+)
 
 licenses(["notice"])
 
