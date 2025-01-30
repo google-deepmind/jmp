@@ -19,7 +19,6 @@ exports_files(["LICENSE"])
 py_library(
     name = "jmp",
     srcs = ["__init__.py"],
-    srcs_version = "PY3",
     visibility = ["//visibility:public"],
     deps = [
         "//jmp/_src:loss_scale",
