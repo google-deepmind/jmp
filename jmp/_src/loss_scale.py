@@ -116,11 +116,11 @@ class DynamicLossScale:
   ...   # conditionally update params using grads
   """
   loss_scale: jnp.ndarray
-  counter: jnp.ndarray = dataclasses.field(
+  counter: jnp.ndarray = dataclasses.field(  # pyrefly: ignore[bad-assignment]
       default_factory=lambda: np.zeros([], np.int32))
   period: int = 2000
   factor: int = 2
-  min_loss_scale: jnp.ndarray = dataclasses.field(
+  min_loss_scale: jnp.ndarray = dataclasses.field(  # pyrefly: ignore[bad-assignment]
       default_factory=lambda: np.ones([], np.float32))
 
   def __post_init__(self) -> None:
