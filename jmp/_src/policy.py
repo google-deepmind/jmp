@@ -56,9 +56,9 @@ class Policy:
     return dataclasses.replace(self, output_dtype=output_dtype)
 
   def __str__(self):
-    return "p={},c={},o={}".format(dtype_to_names[self.param_dtype][0],
-                                   dtype_to_names[self.compute_dtype][0],
-                                   dtype_to_names[self.output_dtype][0])
+    return "p={},c={},o={}".format(dtype_to_names[self.param_dtype][0],  # pyrefly: ignore[bad-index]
+                                   dtype_to_names[self.compute_dtype][0],  # pyrefly: ignore[bad-index]
+                                   dtype_to_names[self.output_dtype][0])  # pyrefly: ignore[bad-index]
 
 
 def get_policy(policy_name: str) -> Policy:
@@ -93,13 +93,13 @@ def get_policy(policy_name: str) -> Policy:
     # of the policy should contain.
     param_dtype = compute_dtype = output_dtype = parse_dtype(policy_name)
 
-  return Policy(param_dtype=param_dtype, compute_dtype=compute_dtype,
-                output_dtype=output_dtype)
+  return Policy(param_dtype=param_dtype, compute_dtype=compute_dtype,  # pyrefly: ignore[bad-argument-type]
+                output_dtype=output_dtype)  # pyrefly: ignore[bad-argument-type]
 
 
 def cast_to_full(tree: T) -> T:
   """Ensures floating point leaves of the given tree are f32."""
-  return _cast_floating_to(tree, jnp.float32)
+  return _cast_floating_to(tree, jnp.float32)  # pyrefly: ignore[bad-argument-type]
 
 
 def cast_to_half(tree: T) -> T:
@@ -111,7 +111,7 @@ def half_dtype() -> jnp.dtype:
   """Returns the half precision dtype for the current backend."""
   device0 = jax.local_devices()[0]
   on_tpu = device0.platform == "tpu"
-  return jnp.bfloat16 if on_tpu else jnp.float16
+  return jnp.bfloat16 if on_tpu else jnp.float16  # pyrefly: ignore[bad-return]
 
 
 dtype_to_names = {
@@ -131,7 +131,7 @@ def parse_dtype(value: str) -> jnp.dtype:
     return half_dtype()
 
   try:
-    return name_to_dtype[value]
+    return name_to_dtype[value]  # pyrefly: ignore[bad-return]
   except KeyError as e:
     raise ValueError(
         f"Unknown dtype '{value}' must be full,half,float16,bfloat16 or a "
