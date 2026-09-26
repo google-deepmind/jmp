@@ -79,6 +79,9 @@ _Meta = Tuple[int, int]
 class DynamicLossScale:
   """Dynamic loss scale.
 
+  The minimum loss scale is part of the dynamic PyTree state, so it is preserved
+  by JAX transformations along with the current scale and counter.
+
   Dynamic loss scaling tries to determine the largest loss scale value that
   will keep gradients finite. It does this by increasing the loss scale every
   `period` steps by `factor` if the grads remain finite, otherwise it reduces
@@ -136,15 +139,15 @@ class DynamicLossScale:
     return jax.tree_util.tree_map(lambda x: x * inv_loss_scale, tree)
 
   def tree_flatten(self) -> Tuple[_Data, _Meta]:
-    data = (self.loss_scale, self.counter)
+    data = (self.loss_scale, self.counter, self.min_loss_scale)
     meta = (self.period, self.factor)
     return data, meta
 
   @classmethod
   def tree_unflatten(cls, meta: _Meta, data: _Data) -> "DynamicLossScale":
-    loss_scale, counter = data
+    loss_scale, counter, min_loss_scale = data
     period, factor = meta
-    return cls(loss_scale, counter, period, factor)
+    return cls(loss_scale, counter, period, factor, min_loss_scale)
 
   def adjust(self, grads_finite: jnp.ndarray) -> "DynamicLossScale":
     """Returns the next state dependent on whether grads are finite."""
