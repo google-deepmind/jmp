@@ -66,7 +66,8 @@ class LossScaleTest(parameterized.TestCase):
     period = 2000
     factor = 2
     loss_scale = jmp.DynamicLossScale(scale, counter, period, factor)
-    self.assertEqual(jax.tree_util.tree_leaves(loss_scale), [scale, counter])
+    self.assertEqual(jax.tree_util.tree_leaves(loss_scale),
+                     [scale, counter, loss_scale.min_loss_scale])
     self.assertEqual(jax.tree_util.tree_map(lambda x: x, loss_scale),
                      loss_scale)
 
@@ -82,7 +83,7 @@ class LossScaleTest(parameterized.TestCase):
       self.assertEqual(loss_scale.period, period)
       self.assertEqual(loss_scale.factor, factor)
 
-    # Loss scale should wrap.
+    # Loss scale should wrap.
     loss_scale = loss_scale.adjust(grads_finite)
     self.assertEqual(loss_scale.loss_scale, 10 * factor)
     self.assertEqual(loss_scale.counter, 0)
@@ -160,6 +161,108 @@ class LossScaleTest(parameterized.TestCase):
   def test_select_tree_rejects_non_scalar(self):
     with self.assertRaisesRegex(AssertionError, "expected boolean scalar"):
       jmp.select_tree(jnp.ones([1]), None, None)
+
+
+class MinimumLossScaleTreeTest(parameterized.TestCase):
+
+  def make_scale(self, minimum):
+    return jmp.DynamicLossScale(
+        loss_scale=jnp.array(4.0, jnp.float32),
+        counter=jnp.array(1, jnp.int32),
+        period=3,
+        factor=2,
+        min_loss_scale=jnp.array(minimum, jnp.float32),
+    )
+
+  @parameterized.parameters(0.0, 0.125, 4.0, 8.0)
+  def test_round_trip_preserves_custom_minimum(self, minimum):
+    scale = self.make_scale(minimum)
+    leaves, treedef = jax.tree_util.tree_flatten(scale)
+    restored = jax.tree_util.tree_unflatten(treedef, leaves)
+    self.assertEqual(restored.min_loss_scale, minimum)
+    self.assertEqual(restored.min_loss_scale.dtype, scale.min_loss_scale.dtype)
+    self.assertEqual(restored.loss_scale, scale.loss_scale)
+    self.assertEqual(restored.counter, scale.counter)
+    self.assertEqual((restored.period, restored.factor), (3, 2))
+    self.assertEqual(jax.tree_util.tree_map(lambda x: x, scale), scale)
+
+  @parameterized.parameters(0.0, 0.125, 4.0, 8.0)
+  def test_jit_adjust_matches_eager_for_custom_minimum(self, minimum):
+    scale = self.make_scale(minimum)
+    adjust = jax.jit(lambda s, finite: s.adjust(finite))
+    eager, compiled = scale, scale
+    for finite in (False, False, False, True, True, True, False):
+      eager = eager.adjust(jnp.array(finite))
+      compiled = adjust(compiled, jnp.array(finite))
+      self.assertEqual(compiled, eager)
+      self.assertEqual(compiled.min_loss_scale, minimum)
+    self.assertEqual(scale.min_loss_scale, minimum)
+    self.assertEqual(scale.loss_scale, 4.0)
+
+  def test_jit_return_preserves_minimum_created_inside_function(self):
+    @jax.jit
+    def make_and_adjust(minimum):
+      scale = self.make_scale(minimum)
+      return scale.adjust(jnp.array(False))
+
+    for minimum in (0.125, 4.0, 8.0):
+      actual = make_and_adjust(jnp.array(minimum))
+      self.assertEqual(actual.min_loss_scale, minimum)
+      self.assertEqual(actual.loss_scale, max(2.0, minimum))
+
+  def test_scan_matches_eager_updates_and_preserves_minimum(self):
+    finite = jnp.array([False, False, False, True, True, True, False])
+    scale = self.make_scale(4.0)
+
+    def step(state, grads_finite):
+      new_state = state.adjust(grads_finite)
+      return new_state, new_state.loss_scale
+
+    expected = []
+    state = scale
+    for flag in finite:
+      state = state.adjust(flag)
+      expected.append(state.loss_scale)
+    for run in (
+        lambda s: jax.lax.scan(step, s, finite),
+        jax.jit(lambda s: jax.lax.scan(step, s, finite)),
+    ):
+      final, values = run(scale)
+      np.testing.assert_array_equal(values, expected)
+      self.assertEqual(final, state)
+      self.assertEqual(final.min_loss_scale, 4.0)
+
+  def test_vmap_keeps_a_distinct_minimum_for_each_scale(self):
+    minima = jnp.array([0.125, 1.0, 4.0, 8.0])
+    scales = jax.vmap(self.make_scale)(minima)
+    np.testing.assert_array_equal(scales.min_loss_scale, minima)
+    adjust = jax.jit(jax.vmap(lambda s: s.adjust(jnp.array(False))))
+    adjusted = adjust(scales)
+    np.testing.assert_array_equal(adjusted.min_loss_scale, minima)
+    np.testing.assert_array_equal(adjusted.loss_scale, [2.0, 2.0, 4.0, 8.0])
+    np.testing.assert_array_equal(adjusted.counter, np.zeros(4))
+
+  def test_select_tree_selects_the_minimum_along_with_other_state(self):
+    first, second = self.make_scale(0.125), self.make_scale(8.0)
+    select = jax.jit(jmp.select_tree)
+    for predicate, expected in ((True, first), (False, second)):
+      selected = select(jnp.array(predicate), first, second)
+      self.assertEqual(selected, expected)
+
+  def test_minimum_is_a_dynamic_argument_to_a_compiled_update(self):
+    trace_minima = []
+
+    @jax.jit
+    def adjust(scale):
+      trace_minima.append(scale.min_loss_scale)
+      return scale.adjust(jnp.array(False))
+
+    for minimum in (4.0, 8.0):
+      actual = adjust(self.make_scale(minimum))
+      self.assertEqual(actual.loss_scale, minimum)
+      self.assertEqual(actual.min_loss_scale, minimum)
+    self.assertLen(trace_minima, 1)
+
 
 if __name__ == "__main__":
   absltest.main()
