@@ -49,7 +49,7 @@ class LossScaleTest(parameterized.TestCase):
 
   @parameterized.named_parameters(
       ("NoOpLossScale", jmp.NoOpLossScale),
-      ("StaticLossScale", lambda: jmp.StaticLossScale(0)),  # pytype: disable=wrong-arg-types  # jax-ndarray
+      ("StaticLossScale", lambda: jmp.StaticLossScale(0)),  # pyrefly: ignore[bad-argument-type]
   )
   def test_static_empty_trees(self, create):
     loss_scale = create()
@@ -57,7 +57,7 @@ class LossScaleTest(parameterized.TestCase):
 
   def test_dynamic_loss_scale_no_warnings(self):
     with warnings.catch_warnings(record=True) as logged_warnings:
-      jmp.DynamicLossScale(2. ** 15)  # pytype: disable=wrong-arg-types  # jax-ndarray
+      jmp.DynamicLossScale(2. ** 15)  # pyrefly: ignore[bad-argument-type]
     self.assertEmpty(logged_warnings)
 
   def test_dynamic_loss_scale_tree(self):
