@@ -150,6 +150,8 @@ class DynamicLossScale:
     """Returns the next state dependent on whether grads are finite."""
     assert grads_finite.ndim == 0, "Expected boolean scalar"
 
+    min_loss_scale = jnp.asarray(
+        self.min_loss_scale, dtype=jnp.asarray(self.loss_scale).dtype)
     first_finite = lambda a, b: jax.lax.select(jnp.isfinite(a).all(), a, b)
     loss_scale = jax.lax.select(
         grads_finite,
@@ -162,7 +164,7 @@ class DynamicLossScale:
             self.loss_scale),
 
         # If grads are non finite reduce loss scale.
-        jnp.maximum(self.min_loss_scale, self.loss_scale / self.factor))
+        jnp.maximum(min_loss_scale, self.loss_scale / self.factor))
 
     counter = ((self.counter + 1) % self.period) * grads_finite
 
