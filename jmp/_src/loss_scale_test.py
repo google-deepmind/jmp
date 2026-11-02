@@ -124,6 +124,48 @@ class LossScaleTest(parameterized.TestCase):
       self.assertEqual(loss_scale.period, period)
       self.assertEqual(loss_scale.factor, factor)
 
+  @parameterized.product(
+      dtype=(jnp.float16, jnp.bfloat16, jnp.float32), use_jit=(False, True))
+  def test_dynamic_loss_scale_adjust_preserves_dtype(self, dtype, use_jit):
+    scale = jmp.DynamicLossScale(dtype(8), period=2)
+    adjust = jax.jit(lambda state, flag: state.adjust(flag)) if use_jit else (
+        lambda state, flag: state.adjust(flag))
+    flags = (True, True, False, False, False, False, False)
+    # Two finite steps grow 8 to 16; failures halve it to the default floor 1.
+    expected_scales = (8, 16, 8, 4, 2, 1, 1)
+    expected_counters = (1, 0, 0, 0, 0, 0, 0)
+    for flag, expected, counter in zip(flags, expected_scales, expected_counters):
+      scale = adjust(scale, jnp.asarray(flag))
+      self.assertEqual(scale.loss_scale.dtype, dtype)
+      self.assertEqual(scale.loss_scale, expected)
+      self.assertEqual(scale.counter, counter)
+
+  @parameterized.parameters(jnp.float16, jnp.bfloat16, jnp.float32)
+  def test_dynamic_loss_scale_low_precision_scan(self, dtype):
+    def step(scale, flag):
+      scale = scale.adjust(flag)
+      return scale, scale.loss_scale
+
+    scale = jmp.DynamicLossScale(dtype(8), period=2)
+    flags = jnp.asarray([True, True, False, False, False, False, False])
+    final, scales = jax.lax.scan(step, scale, flags)
+    self.assertEqual(scales.dtype, dtype)
+    np.testing.assert_array_equal(scales, [8, 16, 8, 4, 2, 1, 1])
+    self.assertEqual(final.loss_scale, 1)
+    self.assertEqual(final.counter, 0)
+
+  @parameterized.product(
+      dtype=(jnp.float16, jnp.bfloat16, jnp.float32), use_jit=(False, True))
+  def test_dynamic_loss_scale_low_precision_overflow(self, dtype, use_jit):
+    maximum = jnp.asarray(jnp.finfo(dtype).max, dtype=dtype)
+    scale = jmp.DynamicLossScale(maximum, period=1)
+    adjust = jax.jit(lambda state: state.adjust(jnp.asarray(True))) if use_jit else (
+        lambda state: state.adjust(jnp.asarray(True)))
+    updated = adjust(scale)
+    self.assertEqual(updated.loss_scale.dtype, dtype)
+    self.assertEqual(updated.loss_scale, maximum)
+    self.assertEqual(updated.counter, 0)
+
   def test_dynamic_loss_scale_adjust_requires_scalar_input(self):
     pass
 
