@@ -29,6 +29,15 @@ import numpy as np
 T = TypeVar("T")
 
 
+def _unscale_leaf(value, loss_scale):
+  """Divide in at least float32 to avoid float16 reciprocal overflow in JIT."""
+  result_dtype = jnp.result_type(value, loss_scale)
+  if result_dtype == jnp.float16:
+    return (jnp.asarray(value, jnp.float32) /
+            jnp.asarray(loss_scale, jnp.float32)).astype(result_dtype)
+  return value / loss_scale
+
+
 def register_empty_pytree(cls):
   tree_util.register_pytree_node(cls, lambda x: ((), x), lambda x, _: x)
 
@@ -64,8 +73,8 @@ class StaticLossScale:
     return jax.tree_util.tree_map(lambda x: x * self.loss_scale, tree)
 
   def unscale(self, tree: T) -> T:
-    inv_loss_scale = 1 / self.loss_scale
-    return jax.tree_util.tree_map(lambda x: x * inv_loss_scale, tree)
+    return jax.tree_util.tree_map(
+        lambda x: _unscale_leaf(x, self.loss_scale), tree)
 
   def adjust(self, grads_finite: jnp.ndarray):
     del grads_finite
@@ -132,8 +141,8 @@ class DynamicLossScale:
     return jax.tree_util.tree_map(lambda x: x * self.loss_scale, tree)
 
   def unscale(self, tree: T) -> T:
-    inv_loss_scale = 1 / self.loss_scale
-    return jax.tree_util.tree_map(lambda x: x * inv_loss_scale, tree)
+    return jax.tree_util.tree_map(
+        lambda x: _unscale_leaf(x, self.loss_scale), tree)
 
   def tree_flatten(self) -> Tuple[_Data, _Meta]:
     data = (self.loss_scale, self.counter)
